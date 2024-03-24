@@ -1,0 +1,142 @@
+{
+  "components": [
+    {
+      "name": "camera",
+      "namespace": "rdk",
+      "type": "camera",
+      "model": "webcam",
+      "attributes": {
+        "video_path": "FDF90FEB-59E5-4FCF-AABD-DA03C4E19BFB"
+      },
+      "depends_on": []
+    },
+    {
+      "name": "camera-transform",
+      "namespace": "rdk",
+      "type": "camera",
+      "model": "transform",
+      "attributes": {
+        "pipeline": [
+          {
+            "attributes": {
+              "valid_labels": [
+                "felix"
+              ],
+              "confidence_threshold": 0.1,
+              "detector_name": "face-vision"
+            },
+            "type": "detections"
+          }
+        ],
+        "source": "camera"
+      },
+      "depends_on": []
+    },
+    {
+      "name": "selfiecamera",
+      "namespace": "rdk",
+      "type": "camera",
+      "model": "viam-soleng:camera:selfie-camera",
+      "attributes": {
+        "vision": "face-vision",
+        "camera": "camera"
+      },
+      "depends_on": [
+        "camera"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "name": "person-model",
+      "namespace": "rdk",
+      "type": "mlmodel",
+      "model": "tflite_cpu",
+      "attributes": {
+        "label_path": "${packages.ml_model.EfficientDet-COCO}/effdetlabels.txt",
+        "model_path": "${packages.ml_model.EfficientDet-COCO}/effdet0 (3).tflite"
+      },
+      "depends_on": []
+    },
+    {
+      "name": "face-vision",
+      "namespace": "rdk",
+      "type": "vision",
+      "model": "viam-labs:detector:facial-detector",
+      "attributes": {
+        "path": "/Users/felixreichenbach/faces/",
+        "face_labels": {
+          "felix": "/Users/felixreichenbach/faces/felix.jpg"
+        },
+        "verify_threshold": 0.5
+      },
+      "depends_on": []
+    }
+  ],
+  "modules": [
+    {
+      "type": "local",
+      "name": "face-detector",
+      "executable_path": "/Users/felixreichenbach/Documents/GitHub/facial-detection/run.sh"
+    },
+    {
+      "type": "local",
+      "name": "selfiecam",
+      "executable_path": "/Users/felixreichenbach/Documents/GitHub/selfie-camera/bin/selfie-camera"
+    }
+  ],
+  "packages": [
+    {
+      "name": "age-classifier-onnx",
+      "package": "viam-soleng/age-classifier-onnx",
+      "type": "ml_model",
+      "version": "latest"
+    },
+    {
+      "name": "gender-classifier-onnx",
+      "package": "viam-soleng/gender-classifier-onnx",
+      "type": "ml_model",
+      "version": "latest"
+    },
+    {
+      "name": "face-detector-onnx",
+      "package": "viam-soleng/face-detector-onnx",
+      "type": "ml_model",
+      "version": "latest"
+    },
+    {
+      "name": "EfficientDet-COCO",
+      "package": "6efeb7e5-91aa-4187-8ed3-e84764726078/EfficientDet-COCO",
+      "type": "ml_model",
+      "version": "latest"
+    }
+  ],
+  "agent_config": {
+    "subsystems": {
+      "agent-syscfg": {
+        "pin_version": "",
+        "pin_url": "",
+        "disable_subsystem": false,
+        "release_channel": "stable"
+      },
+      "viam-agent": {
+        "disable_subsystem": false,
+        "release_channel": "stable",
+        "pin_version": "",
+        "pin_url": ""
+      },
+      "viam-server": {
+        "pin_version": "",
+        "pin_url": "",
+        "disable_subsystem": false,
+        "release_channel": "stable"
+      },
+      "agent-provisioning": {
+        "pin_url": "",
+        "disable_subsystem": false,
+        "release_channel": "stable",
+        "pin_version": ""
+      }
+    }
+  }
+}
