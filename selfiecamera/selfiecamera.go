@@ -2,178 +2,130 @@ package selfiecamera
 
 import (
 	"context"
+	"fmt"
 	"image"
 	"sync"
 
-	"github.com/pkg/errors"
 	"go.viam.com/rdk/components/camera"
-	"go.viam.com/rdk/gostream"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage/transform"
 	"go.viam.com/rdk/services/vision"
+
+	"go.viam.com/rdk/gostream"
+	"go.viam.com/utils"
 )
 
-var errUnimplemented = errors.New("unimplemented")
-var Model = resource.NewModel("viam-soleng", "camera", "selfiecamera")
-var PrettyName = "Viam selfie camera"
-var Description = "A Viam camera component module allowing people to take a selfie of their face"
-
-func init() {
-	resource.RegisterComponent(
-		camera.API,
-		Model,
-		resource.Registration[camera.Camera, *Config]{
-			Constructor: newCamera,
-		})
-}
-
-func newCamera(ctx context.Context, deps resource.Dependencies, conf resource.Config, logger logging.Logger) (camera.Camera, error) {
-	logger.Debugf("Starting %s %s", PrettyName)
-
-	newConf, err := resource.NativeConfig[*Config](conf)
-	if err != nil {
-		return nil, err
-	}
-	of := &selfieCamera{name: conf.ResourceName(), conf: newConf, logger: logger}
-	of.srcCamera, err = camera.FromDependencies(deps, newConf.SrcCamera)
-	if err != nil {
-		return nil, err
-	}
-
-	camera := selfieCamera{
-		Named:  conf.ResourceName().AsNamed(),
-		logger: logger,
-		mu:     sync.RWMutex{},
-		done:   make(chan bool),
-	}
-
-	/*
-		if err := camera.Reconfigure(ctx, deps, conf); err != nil {
-			return nil, err
-		}
-	*/
-	return &camera, nil
-}
+var Model = resource.ModelNamespace("viam-soleng").WithFamily("camera").WithModel("selfie-camera")
 
 type Config struct {
-	SrcCamera          string  `json:"src_camera"`
-	Detector           string  `json:"detector_service"`
-	DetectorConfidence float64 `json:"detector_confidence"`
-	BBoxPadding        int     `json:"padding"`
-	Path               string  `json:"path"`
+	Camera  string
+	Vision  string
+	Objects map[string]float64
 }
 
 func (cfg *Config) Validate(path string) ([]string, error) {
-	return []string{cfg.SrcCamera}, nil
+	if cfg.Camera == "" {
+		return nil, utils.NewConfigValidationFieldRequiredError(path, "camera")
+	}
+
+	if cfg.Vision == "" {
+		return nil, utils.NewConfigValidationFieldRequiredError(path, "vision")
+	}
+
+	return []string{cfg.Camera, cfg.Vision}, nil
+}
+
+func init() {
+	resource.RegisterComponent(camera.API, Model, resource.Registration[camera.Camera, *Config]{
+		Constructor: func(ctx context.Context, deps resource.Dependencies, conf resource.Config, logger logging.Logger) (camera.Camera, error) {
+			newConf, err := resource.NativeConfig[*Config](conf)
+			if err != nil {
+				return nil, err
+			}
+
+			fc := &selfieCamera{name: conf.ResourceName(), conf: newConf, logger: logger}
+
+			fc.cam, err = camera.FromDependencies(deps, newConf.Camera)
+			if err != nil {
+				return nil, err
+			}
+
+			fc.vis, err = vision.FromDependencies(deps, newConf.Vision)
+			if err != nil {
+				return nil, err
+			}
+
+			return fc, nil
+		},
+	})
 }
 
 type selfieCamera struct {
-	resource.Named
 	resource.AlwaysRebuild
+	resource.TriviallyCloseable
 
-	name               resource.Name
-	conf               *Config
-	logger             logging.Logger
-	srcCamera          camera.Camera
-	detector           vision.Service
-	detectorConfidence float64
-	bboxPadding        int
-	path               string
-	mu                 sync.RWMutex
-	cancelCtx          context.Context
-	cancelFunc         func()
-	done               chan bool
+	name   resource.Name
+	conf   *Config
+	logger logging.Logger
+
+	cam camera.Camera
+	vis vision.Service
+
+	mu sync.Mutex
 }
 
-/*
-// Reconfigure reconfigures with new settings.
-func (sc *selfieCamera) Reconfigure(ctx context.Context, deps resource.Dependencies, conf resource.Config) error {
-	sc.mu.Lock()
-	defer sc.mu.Unlock()
-	sc.logger.Debugf("Reconfiguring %s", PrettyName)
-	// In case the module has changed name
-	sc.Named = conf.ResourceName().AsNamed()
-	newConf, err := resource.NativeConfig[*Config](conf)
+func (fc *selfieCamera) Name() resource.Name {
+	return fc.name
+}
+
+func (fc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
+	return nil, resource.ErrDoUnimplemented
+}
+
+func (fc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
+	images, meta, err := fc.cam.Images(ctx)
 	if err != nil {
-		return err
+		return images, meta, err
 	}
-	// Get the camera
-	sc.srcCamera, err = camera.FromDependencies(deps, newConf.SrcCamera)
-	if err != nil {
-		return errors.Wrapf(err, "unable to get source camera %v for image sourcing...", newConf.Detector)
-	}
-	sc.logger.Debug("**** Reconfigured ****")
-	return nil
-}
-*/
-
-// Images implements camera.Camera.
-func (sc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
-	panic("unimplemented")
+	return images, meta, nil
 }
 
-// Name implements camera.Camera.
-// Subtle: this method shadows the method (Named).Name of selfieCamera.Named.
-func (sc *selfieCamera) Name() resource.Name {
-	panic("unimplemented")
-}
-
-// NextPointCloud implements camera.Camera.
-func (sc *selfieCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
-	panic("unimplemented")
-}
-
-// Projector implements camera.Camera.
-func (sc *selfieCamera) Projector(ctx context.Context) (transform.Projector, error) {
-	panic("unimplemented")
-}
-
-// Properties implements camera.Camera.
-func (sc *selfieCamera) Properties(ctx context.Context) (camera.Properties, error) {
-	panic("unimplemented")
-}
-
-// Stream implements camera.Camera.
-func (sc *selfieCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorHandler) (gostream.MediaStream[image.Image], error) {
-
-	// gets the stream from a camera
-	stream, err := sc.srcCamera.Stream(context.Background(), errHandlers...)
+func (fc *selfieCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorHandler) (gostream.VideoStream, error) {
+	camStream, err := fc.cam.Stream(ctx, errHandlers...)
 	if err != nil {
 		return nil, err
 	}
-	defer stream.Close(ctx)
-	return srcCamStream{stream}, nil
+
+	return sourceStream{camStream, fc}, nil
 }
 
-// DoCommand can be implemented to extend functionality but returns unimplemented currently.
-func (sc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
-	return nil, errUnimplemented
-}
-
-// The close method is executed when the component is shut down
-func (sc *selfieCamera) Close(ctx context.Context) error {
-	sc.logger.Debugf("Shutting down %s", PrettyName)
-	return nil
-}
-
-type srcCamStream struct {
+type sourceStream struct {
 	cameraStream gostream.VideoStream
+	fc           *selfieCamera
 }
 
-// Close implements gostream.MediaStream.
-func (sc srcCamStream) Close(ctx context.Context) error {
-	panic("unimplemented")
+func (fs sourceStream) Next(ctx context.Context) (image.Image, func(), error) {
+	return fs.cameraStream.Next(ctx)
 }
 
-// Next implements gostream.MediaStream.
-func (scs srcCamStream) Next(ctx context.Context) (image.Image, func(), error) {
-	// Get next camera img
-	img, release, err := scs.cameraStream.Next(ctx)
-	if err != nil {
-		return nil, nil, err
+func (fs sourceStream) Close(ctx context.Context) error {
+	return fs.cameraStream.Close(ctx)
+}
+
+func (fc *selfieCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
+	return nil, fmt.Errorf("selfieCamera doesn't support pointclouds")
+}
+
+func (fc *selfieCamera) Properties(ctx context.Context) (camera.Properties, error) {
+	p, err := fc.cam.Properties(ctx)
+	if err == nil {
+		p.SupportsPCD = false
 	}
-	// return raw image
-	return img, release, nil
+	return p, err
+}
+
+func (fc *selfieCamera) Projector(ctx context.Context) (transform.Projector, error) {
+	return fc.cam.Projector(ctx)
 }
