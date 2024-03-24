@@ -2,6 +2,7 @@ package selfiecamera
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"sync"
@@ -20,9 +21,9 @@ import (
 var Model = resource.ModelNamespace("viam-soleng").WithFamily("camera").WithModel("selfie-camera")
 
 type Config struct {
-	Camera  string
-	Vision  string
-	Objects map[string]float64
+	Camera string
+	Vision string
+	Path   string
 }
 
 func (cfg *Config) Validate(path string) ([]string, error) {
@@ -32,6 +33,10 @@ func (cfg *Config) Validate(path string) ([]string, error) {
 
 	if cfg.Vision == "" {
 		return nil, utils.NewConfigValidationFieldRequiredError(path, "vision")
+	}
+
+	if cfg.Path == "" {
+		return nil, utils.NewConfigValidationFieldRequiredError(path, "path")
 	}
 
 	return []string{cfg.Camera, cfg.Vision}, nil
@@ -81,7 +86,13 @@ func (fc *selfieCamera) Name() resource.Name {
 }
 
 func (fc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
-	return nil, resource.ErrDoUnimplemented
+	name, ok := cmd["name"].(string)
+	if ok {
+		fc.takeSelfie(name)
+	} else {
+		return nil, errors.New("name value must be string")
+	}
+	return map[string]any{"status": "successfully completed"}, nil
 }
 
 func (fc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
@@ -115,7 +126,7 @@ func (fs sourceStream) Close(ctx context.Context) error {
 }
 
 func (fc *selfieCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
-	return nil, fmt.Errorf("selfieCamera doesn't support pointclouds")
+	return nil, fmt.Errorf("Selfie-Camera doesn't support pointclouds")
 }
 
 func (fc *selfieCamera) Properties(ctx context.Context) (camera.Properties, error) {
@@ -128,4 +139,18 @@ func (fc *selfieCamera) Properties(ctx context.Context) (camera.Properties, erro
 
 func (fc *selfieCamera) Projector(ctx context.Context) (transform.Projector, error) {
 	return fc.cam.Projector(ctx)
+}
+
+func (fc *selfieCamera) takeSelfie(name string) error {
+	fc.logger.Infof("And the name is: %s", name)
+	// get image from camera
+
+	// Get bounding box from vision service
+
+	// Crop Face
+
+	// Store cropped image under path
+
+	return nil
+
 }
