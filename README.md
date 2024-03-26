@@ -16,3 +16,10 @@ A camera module which will allow you to take a picture of your face to be stored
   "padding": 30
 }
 ```
+## Do Command Input
+
+```json
+{
+  "name": "Maybe Your Name"
+}
+```
