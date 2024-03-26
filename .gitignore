@@ -4,3 +4,4 @@ bin/selfie-camera
 .venv
 client.py
 .DS_Store
+selfies/
