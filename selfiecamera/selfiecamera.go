@@ -1,10 +1,14 @@
 package selfiecamera
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"image"
+	"image/jpeg"
+	"os"
 	"sync"
 
 	"go.viam.com/rdk/components/camera"
@@ -49,19 +53,16 @@ func init() {
 			if err != nil {
 				return nil, err
 			}
-
 			fc := &selfieCamera{name: conf.ResourceName(), conf: newConf, logger: logger}
-
 			fc.cam, err = camera.FromDependencies(deps, newConf.Camera)
 			if err != nil {
 				return nil, err
 			}
-
 			fc.vis, err = vision.FromDependencies(deps, newConf.Vision)
 			if err != nil {
 				return nil, err
 			}
-
+			fc.path = newConf.Path
 			return fc, nil
 		},
 	})
@@ -75,41 +76,53 @@ type selfieCamera struct {
 	conf   *Config
 	logger logging.Logger
 
-	cam camera.Camera
-	vis vision.Service
+	cam  camera.Camera
+	vis  vision.Service
+	path string
+
+	image image.Image
 
 	mu sync.Mutex
 }
 
-func (fc *selfieCamera) Name() resource.Name {
-	return fc.name
+func (sc *selfieCamera) Name() resource.Name {
+	return sc.name
 }
 
-func (fc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
+func (sc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
 	name, ok := cmd["name"].(string)
 	if ok {
-		fc.takeSelfie(name)
+		image, err := sc.takeSelfie(name)
+		if err != nil {
+			return nil, err
+		} else {
+			return map[string]any{"image": image}, nil
+		}
 	} else {
-		return nil, errors.New("name value must be string")
+		return nil, errors.New(`"name" value must be string`)
 	}
-	return map[string]any{"status": "successfully completed"}, nil
 }
 
-func (fc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
-	images, meta, err := fc.cam.Images(ctx)
+func (sc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
+	images, meta, err := sc.cam.Images(ctx)
 	if err != nil {
 		return images, meta, err
 	}
 	return images, meta, nil
 }
 
-func (fc *selfieCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorHandler) (gostream.VideoStream, error) {
-	camStream, err := fc.cam.Stream(ctx, errHandlers...)
+func (sc *selfieCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorHandler) (gostream.VideoStream, error) {
+	camStream, err := sc.cam.Stream(ctx, errHandlers...)
 	if err != nil {
 		return nil, err
 	}
-
-	return sourceStream{camStream, fc}, nil
+	image, release, err := camStream.Next(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer release()
+	sc.image = image
+	return sourceStream{camStream, sc}, nil
 }
 
 type sourceStream struct {
@@ -117,20 +130,20 @@ type sourceStream struct {
 	fc           *selfieCamera
 }
 
-func (fs sourceStream) Next(ctx context.Context) (image.Image, func(), error) {
-	return fs.cameraStream.Next(ctx)
+func (sc sourceStream) Next(ctx context.Context) (image.Image, func(), error) {
+	return sc.cameraStream.Next(ctx)
 }
 
-func (fs sourceStream) Close(ctx context.Context) error {
-	return fs.cameraStream.Close(ctx)
+func (sc sourceStream) Close(ctx context.Context) error {
+	return sc.cameraStream.Close(ctx)
 }
 
-func (fc *selfieCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
+func (sc *selfieCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
 	return nil, fmt.Errorf("Selfie-Camera doesn't support pointclouds")
 }
 
-func (fc *selfieCamera) Properties(ctx context.Context) (camera.Properties, error) {
-	p, err := fc.cam.Properties(ctx)
+func (sc *selfieCamera) Properties(ctx context.Context) (camera.Properties, error) {
+	p, err := sc.cam.Properties(ctx)
 	if err == nil {
 		p.SupportsPCD = false
 	}
@@ -141,8 +154,8 @@ func (fc *selfieCamera) Projector(ctx context.Context) (transform.Projector, err
 	return fc.cam.Projector(ctx)
 }
 
-func (fc *selfieCamera) takeSelfie(name string) error {
-	fc.logger.Infof("And the name is: %s", name)
+func (sc *selfieCamera) takeSelfie(name string) (image.Image, error) {
+	sc.logger.Infof("And the name is: %s", name)
 	// get image from camera
 
 	// Get bounding box from vision service
@@ -150,7 +163,36 @@ func (fc *selfieCamera) takeSelfie(name string) error {
 	// Crop Face
 
 	// Store cropped image under path
+	if sc.image != nil {
+		err := saveImage(sc.image, name, sc.path)
+		if err != nil {
+			return nil, err
+		} else {
+			return sc.image, nil
+		}
+	}
+	return nil, errors.New("image buffer empty, activate camera first")
 
+}
+
+// Saves images to a path on disk
+func saveImage(image image.Image, name string, path string) error {
+	buf := new(bytes.Buffer)
+	err := jpeg.Encode(buf, image, nil)
+	if err != nil {
+		return err
+	}
+	digest := sha256.New()
+	digest.Write(buf.Bytes())
+	hash := digest.Sum(nil)
+	f, err := os.Create(fmt.Sprintf("%s/%s_%x.jpg", path, name, hash))
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	opt := jpeg.Options{
+		Quality: 90,
+	}
+	jpeg.Encode(f, image, &opt)
 	return nil
-
 }
