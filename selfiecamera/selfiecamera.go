@@ -10,6 +10,7 @@ import (
 	"image/draw"
 	"image/jpeg"
 	"os"
+	"path/filepath"
 	"slices"
 	"sort"
 	"sync"
@@ -204,7 +205,14 @@ func saveImage(image image.Image, name string, path string) error {
 	digest := sha256.New()
 	digest.Write(buf.Bytes())
 	hash := digest.Sum(nil)
-	f, err := os.Create(fmt.Sprintf("%s/%s_%x.jpg", path, name, hash))
+
+	namedpath := filepath.Join(path, name)
+	err = os.MkdirAll(namedpath, os.ModePerm)
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(fmt.Sprintf("%s/%s_%x.jpg", namedpath, name, hash))
 	if err != nil {
 		return err
 	}
