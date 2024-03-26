@@ -1,6 +1,6 @@
 
-selfie-camera:
-	go build -o ./bin/selfie-camera
+selfie-camera: *.go selfiecamera/*.go
+	go build -o selfie-camera
 
 test:
 	go test

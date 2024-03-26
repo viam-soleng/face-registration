@@ -1,0 +1,21 @@
+{
+  "module_id": "viam-soleng:selfie-camera",
+  "visibility": "private",
+  "url": "https://github.com/viam-soleng/selfie-camera",
+  "description": "A Viam camera module which allows you to take a picture of your face leveraging a face detector ml model. The picture is stored under a configurable path.",
+  "models": [
+    {
+      "api": "rdk:component:camera",
+      "model": "viam-soleng:camera:selfie-camera"
+    }
+  ],
+  "build": {
+    "build": "make module",
+    "arch": [
+      "linux/amd64",
+      "linux/arm64",
+      "darwin/arm64"
+    ]
+  },
+  "entrypoint": "selfie-camera"
+}
