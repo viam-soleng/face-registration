@@ -5,3 +5,5 @@ bin/selfie-camera
 client.py
 .DS_Store
 selfies/
+webclient-react/node_modules/
+webclient-react/.env
