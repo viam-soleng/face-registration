@@ -1,4 +1,4 @@
-# React Tele-operation Example
+# Selfie-Camera Webclient-React
 
 This example project allows you to take pictures of your face and store them in a local folder on the device where the Viam server runs.
 
