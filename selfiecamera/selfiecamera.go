@@ -104,17 +104,55 @@ func (sc *selfieCamera) Name() resource.Name {
 }
 
 func (sc *selfieCamera) DoCommand(ctx context.Context, cmd map[string]interface{}) (map[string]interface{}, error) {
-	name, ok := cmd["name"].(string)
-	if ok {
-		image, err := sc.takeSelfie(ctx, name)
-		if err != nil {
-			return nil, err
-		} else {
-			return map[string]any{"image": image}, nil
-		}
-	} else {
-		return nil, errors.New(`"name" value must be string`)
+
+	command, ok := cmd["command"].(string)
+	if !ok {
+		return nil, errors.New("command value must be string type")
 	}
+	switch command {
+	case "add_face":
+		name, ok := cmd["name"].(string)
+		if ok {
+			image, err := sc.addFace(ctx, name)
+			if err != nil {
+				return nil, err
+			} else {
+				return map[string]any{"image": image}, nil
+			}
+		} else {
+			return nil, errors.New(`"name" value must be string type`)
+		}
+	case "remove_face":
+		name, ok := cmd["name"].(string)
+		if ok {
+			err := sc.removeFace(name)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New(`"name" value must be string type`)
+		}
+	default:
+		return map[string]interface{}{"result": fmt.Sprintf("command %s not implemented", command)}, nil
+	}
+	return nil, nil
+}
+
+func (sc *selfieCamera) removeFace(name string) error {
+	files, err := os.ReadDir(sc.path + "/" + name)
+	sc.logger.Infof("files to be deleted: %s", files)
+	if err != nil {
+		return err
+	}
+	for _, entry := range files {
+		if !entry.IsDir() {
+			if err := os.Remove(sc.path + "/" + name + "/" + entry.Name()); err != nil {
+				return err
+			}
+			sc.logger.Infof("file %s deleted", entry.Name())
+		}
+	}
+	return nil
 }
 
 func (sc *selfieCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
@@ -168,7 +206,7 @@ func (fc *selfieCamera) Projector(ctx context.Context) (transform.Projector, err
 	return fc.camera.Projector(ctx)
 }
 
-func (sc *selfieCamera) takeSelfie(ctx context.Context, name string) (image.Image, error) {
+func (sc *selfieCamera) addFace(ctx context.Context, name string) (image.Image, error) {
 	// Get bounding box from vision service
 	detections, err := sc.detectFace(ctx, sc.image)
 	if err != nil {
