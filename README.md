@@ -20,7 +20,8 @@ A camera module which will allow you to take a picture of your face to be stored
 
 ```json
 {
-  "name": "Maybe Your Name"
+  "command": "add_face", //or "remove_face"
+  "name": "Your Name / ID etc."
 }
 ```
 ## Web Client React
