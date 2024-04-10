@@ -8,7 +8,7 @@ import (
 	"go.viam.com/rdk/module"
 	"go.viam.com/utils"
 
-	"github.com/viam-soleng/selfie-camera/selfiecamera"
+	"github.com/viam-soleng/selfie-camera/facecamera"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func mainWithArgs(ctx context.Context, args []string, logger logging.Logger) (er
 
 	// Models and APIs add helpers to the registry during their init().
 	// They can then be added to the module here.
-	err = myMod.AddModelFromRegistry(ctx, camera.API, selfiecamera.Model)
+	err = myMod.AddModelFromRegistry(ctx, camera.API, facecamera.Model)
 	if err != nil {
 		return err
 	}
