@@ -42,7 +42,8 @@ export const SelfieCamera = (props: SelfieCameraProps): JSX.Element => {
             } else {
                 try {
                     await cameraClient?.doCommand({ "command": "remove_face", "name": name });
-                    await identificationClient?.doCommand({ "command": "recompute_embeddings" })
+                    // TODO: waiting for merge of PR15
+                    //await identificationClient?.doCommand({ "command": "recompute_embeddings" })
                     alert(name + " has been removed!");
                 }
                 catch (err: any) {
