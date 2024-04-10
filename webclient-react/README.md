@@ -1,10 +1,10 @@
 # Selfie-Camera Webclient-React
 
-This example project allows you to take pictures of your face and store them in a local folder on the device where the Viam server runs.
+This is the webclient as part of the end to end example where this "face-registration" module is paired with the "deepface-identification" module. It is a small react webapplication allowing you to connect to Viam server, register your face with a name/id and then use the deepface identification module to identify you when you are in front of the camera. The webapplication also allows you to remove a face whenever required. All pictures of faces are stored on the device where Viam server runs.
 
 ## Setup
 
-First, follow the setup instructions for the repository in `CONTRIBUTING.md`. Then, install development dependencies for the demo and launch a dev server.
+To install the dependencies run the followin command:
 
 ```shell
 npm install
@@ -19,11 +19,15 @@ VITE_ROBOT_KEY_ID=<-YOUR KEY ID->
 VITE_ROBOT_KEY_VALUE=<- YOUR KEY VALUE->
 ```
 
+Then you can start the web application with the following command:
+
 ```shell
 npm start
 ```
 
 ### Viam Machine Configuration
+
+To make it easy for you to setup the whole end to end process, simply create a new machine under app.viam.com and then copy & paste the following json structure into the raw json configuration screen:
 
 ```json
 {
