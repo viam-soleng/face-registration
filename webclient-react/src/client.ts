@@ -52,7 +52,7 @@ export const getStreamClient = (client: RobotClient): StreamClient => {
  * @returns A connected camera client
  */
 export const getCameraClient = (client: RobotClient): CameraClient => {
-  return new CameraClient(client, 'selfiecamera');
+  return new CameraClient(client, 'face-camera');
 };
 
 /**
