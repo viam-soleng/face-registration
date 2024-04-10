@@ -1,6 +1,6 @@
-# Viam Selfie Camera
+# Viam Face Registration Camera
 
-A camera module which will allow you to take a picture of your face to be stored under a configurable path for further use by for example a face recognition module such as [viam-face-identification](https://github.com/viam-labs/viam-face-identification).
+A camera module which will allow you to take a picture of your face which will be stored under a configurable path on the computer the viam service runs. Previously registered faces can also be removed. This module works well in combination with the face recognition module [viam-face-identification](https://github.com/viam-labs/viam-face-identification).
 
 ## Component Configuration
 
@@ -20,7 +20,8 @@ A camera module which will allow you to take a picture of your face to be stored
 
 ```json
 {
-  "name": "Maybe Your Name"
+  "command": "add_face", //or "remove_face"
+  "name": "Your Name / ID etc."
 }
 ```
 ## Web Client React
