@@ -26,120 +26,174 @@ npm start
 ### Viam Machine Configuration
 
 ```json
-
 {
+  "agent_config": {
+    "subsystems": {
+      "viam-agent": {
+        "release_channel": "stable",
+        "pin_version": "",
+        "pin_url": "",
+        "disable_subsystem": false
+      },
+      "viam-server": {
+        "pin_version": "",
+        "pin_url": "",
+        "disable_subsystem": false,
+        "release_channel": "stable"
+      },
+      "agent-provisioning": {
+        "release_channel": "stable",
+        "pin_version": "",
+        "pin_url": "",
+        "disable_subsystem": false
+      },
+      "agent-syscfg": {
+        "pin_url": "",
+        "disable_subsystem": false,
+        "release_channel": "stable",
+        "pin_version": ""
+      }
+    }
+  },
   "components": [
     {
-      "name": "selfiecamera",
-      "namespace": "rdk",
-      "type": "camera",
-      "model": "viam-soleng:camera:selfie-camera",
-      "attributes": {
-        "confidence": 0.5,
-        "detector": "vision-face",
-        "labels": [
-          "face"
-        ],
-        "padding": 30,
-        "path": "/Users/Username/Documents/GitHub/selfie-camera/selfies",
-        "camera": "camera"
-      },
-      "depends_on": [
-        "camera",
-        "vision-face"
-      ]
-    },
-    {
-      "name": "camera",
       "namespace": "rdk",
       "type": "camera",
       "model": "webcam",
-      "attributes": {
-        "video_path": "FDF90FEB-59E5-4FCF-AABD-DA03C4E19BFB"
-      }
+      "attributes": {},
+      "name": "camera",
+      "depends_on": []
     },
     {
-      "name": "camera-transform",
-      "namespace": "rdk",
-      "type": "camera",
+      "name": "tf-face-detect",
       "model": "transform",
+      "type": "camera",
+      "namespace": "rdk",
       "attributes": {
+        "source": "camera",
         "pipeline": [
           {
             "type": "detections",
             "attributes": {
-              "detector_name": "vision-face",
+              "detector_name": "vis-face-detect",
+              "confidence_threshold": 0.5,
               "valid_labels": [
                 "face"
-              ],
-              "confidence_threshold": 0.8
+              ]
             }
           }
-        ],
-        "source": "selfiecamera"
-      }
+        ]
+      },
+      "depends_on": []
     },
     {
-      "name": "camera-face-identification",
-      "namespace": "rdk",
-      "type": "camera",
+      "name": "tf-identification",
       "model": "transform",
+      "type": "camera",
+      "namespace": "rdk",
       "attributes": {
+        "source": "camera",
         "pipeline": [
           {
+            "type": "detections",
             "attributes": {
-              "confidence_threshold": 0.5,
-              "detector_name": "vision-deepface"
-            },
-            "type": "detections"
+              "detector_name": "vis-identification",
+              "confidence_threshold": 0.5
+            }
           }
-        ],
-        "source": "camera"
-      }
+        ]
+      },
+      "depends_on": []
+    },
+    {
+      "name": "face-camera",
+      "model": "viam-soleng:camera:face-camera",
+      "type": "camera",
+      "namespace": "rdk",
+      "attributes": {
+        "padding": 30,
+        "path": "/Users/username/Downloads/faces",
+        "camera": "camera",
+        "confidence": 0.5,
+        "detector": "vis-face-detect",
+        "labels": [
+          "face"
+        ]
+      },
+      "depends_on": []
     }
   ],
   "services": [
     {
-      "name": "vision-face",
-      "namespace": "rdk",
+      "type": "mlmodel",
+      "model": "viam-labs:mlmodel:onnx-cpu",
+      "attributes": {
+        "model_path": "${packages.face-detector-onnx}/face_detector_640.onnx",
+        "label_path": "${packages.face-detector-onnx}/face_labels.txt",
+        "num_threads": 1,
+        "package_reference": "viam-soleng/face-detector-onnx"
+      },
+      "name": "ml-face-detect",
+      "namespace": "rdk"
+    },
+    {
+      "name": "vis-face-detect",
       "type": "vision",
       "model": "mlmodel",
       "attributes": {
+        "mlmodel_name": "ml-face-detect",
+        "remap_input_names": {
+          "input": "image"
+        },
+        "remap_output_names": {
+          "boxes": "location",
+          "scores": "score"
+        },
         "xmin_ymin_xmax_ymax_order": [
           0,
           1,
           2,
           3
-        ],
-        "mlmodel_name": "model-face",
-        "remap_input_names": {
-          "input": "image"
-        },
-        "remap_output_names": {
-          "scores": "score",
-          "boxes": "location"
-        }
+        ]
       }
     },
     {
-      "name": "model-face",
+      "name": "vis-identification",
+      "type": "vision",
       "namespace": "rdk",
-      "type": "mlmodel",
-      "model": "viam-labs:mlmodel:onnx-cpu",
+      "model": "viam:vision:deepface-identification",
       "attributes": {
-        "label_path": "${packages.face-detector-onnx}/face_labels.txt",
-        "model_path": "${packages.face-detector-onnx}/face_detector_640.onnx",
-        "num_threads": 1,
-        "package_reference": "viam-soleng/face-detector-onnx"
+        "camera_name": "camera",
+        "picture_directory": "/Users/username/Downloads/faces"
       }
     }
   ],
   "modules": [
     {
+      "version": "0.0.1",
       "type": "registry",
-      "name": "viam-soleng_selfie-camera",
-      "module_id": "viam-soleng:selfie-camera",
-      "version": "0.0.3"
+      "name": "viam-soleng_face-registration",
+      "module_id": "viam-soleng:face-registration"
+    },
+    {
+      "type": "registry",
+      "name": "viam_deepface-identification",
+      "module_id": "viam:deepface-identification",
+      "version": "0.2.4"
+    },
+    {
+      "module_id": "viam-labs:onnx-cpu",
+      "version": "0.1.2",
+      "type": "registry",
+      "name": "viam-labs_onnx-cpu"
+    }
+  ],
+  "packages": [
+    {
+      "version": "latest",
+      "name": "face-detector-onnx",
+      "package": "viam-soleng/face-detector-onnx",
+      "type": "ml_model"
     }
   ]
 }
