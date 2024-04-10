@@ -1,5 +1,5 @@
 
-selfie-camera: *.go facecamera/*.go
+face-camera: *.go facecamera/*.go
 	go build -o face-camera
 
 test:
