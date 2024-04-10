@@ -1,6 +1,6 @@
 
-selfie-camera: *.go selfiecamera/*.go
-	go build -o selfie-camera
+selfie-camera: *.go facecamera/*.go
+	go build -o face-camera
 
 test:
 	go test
@@ -8,7 +8,7 @@ test:
 lint:
 	gofmt -w -s .
 
-module: selfie-camera
-	tar czf module.tar.gz selfie-camera
+module: face-camera
+	tar czf module.tar.gz face-camera
 
 all: module test

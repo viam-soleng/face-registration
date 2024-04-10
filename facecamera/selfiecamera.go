@@ -27,7 +27,7 @@ import (
 	"go.viam.com/utils"
 )
 
-var Model = resource.ModelNamespace("viam-soleng").WithFamily("camera").WithModel("face-registration")
+var Model = resource.ModelNamespace("viam-soleng").WithFamily("camera").WithModel("face-camera")
 
 type Config struct {
 	Camera     string
