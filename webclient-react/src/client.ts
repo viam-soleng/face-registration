@@ -62,5 +62,5 @@ export const getCameraClient = (client: RobotClient): CameraClient => {
  * @returns A connected vision client
  */
 export const getIdentificationClient = (client: RobotClient): VisionClient => {
-  return new VisionClient(client, 'vision-deepface');
+  return new VisionClient(client, 'vis-identification');
 };

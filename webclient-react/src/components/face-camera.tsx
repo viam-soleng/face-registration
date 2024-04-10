@@ -20,7 +20,8 @@ export const SelfieCamera = (props: SelfieCameraProps): JSX.Element => {
                 let result;
                 try {
                     await cameraClient?.doCommand({ "command": "add_face", "name": name });
-                    await identificationClient?.doCommand({ "command": "recompute_embeddings" })
+                    // TODO: waiting for merge of PR15
+                    //await identificationClient?.doCommand({ "command": "recompute_embeddings" })
                     alert(name + " has been registered!");
                 }
                 catch (err: any) {
