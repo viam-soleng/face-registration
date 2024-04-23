@@ -21,7 +21,7 @@ export const SelfieCamera = (props: SelfieCameraProps): JSX.Element => {
                 try {
                     await cameraClient?.doCommand({ "command": "add_face", "name": name });
                     // TODO: waiting for merge of PR15
-                    //await identificationClient?.doCommand({ "command": "recompute_embeddings" })
+                    await identificationClient?.doCommand({ "command": "recompute_embeddings" })
                     alert(name + " has been registered!");
                 }
                 catch (err: any) {
@@ -43,7 +43,7 @@ export const SelfieCamera = (props: SelfieCameraProps): JSX.Element => {
                 try {
                     await cameraClient?.doCommand({ "command": "remove_face", "name": name });
                     // TODO: waiting for merge of PR15
-                    //await identificationClient?.doCommand({ "command": "recompute_embeddings" })
+                    await identificationClient?.doCommand({ "command": "recompute_embeddings" })
                     alert(name + " has been removed!");
                 }
                 catch (err: any) {
