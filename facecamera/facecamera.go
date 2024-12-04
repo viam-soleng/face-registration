@@ -13,13 +13,11 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"sync"
 
 	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/rdk/rimage/transform"
 	"go.viam.com/rdk/services/vision"
 	"go.viam.com/rdk/vision/objectdetection"
 
@@ -95,8 +93,11 @@ type faceCamera struct {
 	path       string
 
 	image image.Image
+}
 
-	mu sync.Mutex
+// Image implements camera.Camera.
+func (sc *faceCamera) Image(ctx context.Context, mimeType string, extra map[string]interface{}) ([]byte, camera.ImageMetadata, error) {
+	return sc.camera.Image(ctx, mimeType, extra)
 }
 
 func (sc *faceCamera) Name() resource.Name {
@@ -200,10 +201,6 @@ func (sc *faceCamera) Properties(ctx context.Context) (camera.Properties, error)
 		p.SupportsPCD = false
 	}
 	return p, err
-}
-
-func (fc *faceCamera) Projector(ctx context.Context) (transform.Projector, error) {
-	return fc.camera.Projector(ctx)
 }
 
 func (sc *faceCamera) addFace(ctx context.Context, name string) (image.Image, error) {
