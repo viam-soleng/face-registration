@@ -169,26 +169,7 @@ func (sc *faceCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorH
 	if err != nil {
 		return nil, err
 	}
-	image, release, err := camStream.Next(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-	sc.image = image
-	return sourceStream{camStream, sc}, nil
-}
-
-type sourceStream struct {
-	cameraStream gostream.VideoStream
-	fc           *faceCamera
-}
-
-func (sc sourceStream) Next(ctx context.Context) (image.Image, func(), error) {
-	return sc.cameraStream.Next(ctx)
-}
-
-func (sc sourceStream) Close(ctx context.Context) error {
-	return sc.cameraStream.Close(ctx)
+	return camStream, nil
 }
 
 func (sc *faceCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
