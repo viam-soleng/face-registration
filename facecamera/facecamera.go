@@ -13,13 +13,11 @@ import (
 	"path/filepath"
 	"slices"
 	"sort"
-	"sync"
 
 	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/rdk/rimage/transform"
 	"go.viam.com/rdk/services/vision"
 	"go.viam.com/rdk/vision/objectdetection"
 
@@ -95,8 +93,11 @@ type faceCamera struct {
 	path       string
 
 	image image.Image
+}
 
-	mu sync.Mutex
+// Image implements camera.Camera.
+func (sc *faceCamera) Image(ctx context.Context, mimeType string, extra map[string]interface{}) ([]byte, camera.ImageMetadata, error) {
+	return sc.camera.Image(ctx, mimeType, extra)
 }
 
 func (sc *faceCamera) Name() resource.Name {
@@ -168,26 +169,7 @@ func (sc *faceCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorH
 	if err != nil {
 		return nil, err
 	}
-	image, release, err := camStream.Next(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer release()
-	sc.image = image
-	return sourceStream{camStream, sc}, nil
-}
-
-type sourceStream struct {
-	cameraStream gostream.VideoStream
-	fc           *faceCamera
-}
-
-func (sc sourceStream) Next(ctx context.Context) (image.Image, func(), error) {
-	return sc.cameraStream.Next(ctx)
-}
-
-func (sc sourceStream) Close(ctx context.Context) error {
-	return sc.cameraStream.Close(ctx)
+	return camStream, nil
 }
 
 func (sc *faceCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
@@ -200,10 +182,6 @@ func (sc *faceCamera) Properties(ctx context.Context) (camera.Properties, error)
 		p.SupportsPCD = false
 	}
 	return p, err
-}
-
-func (fc *faceCamera) Projector(ctx context.Context) (transform.Projector, error) {
-	return fc.camera.Projector(ctx)
 }
 
 func (sc *faceCamera) addFace(ctx context.Context, name string) (image.Image, error) {
