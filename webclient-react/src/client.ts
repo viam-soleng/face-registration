@@ -4,7 +4,7 @@ import {
   CameraClient,
   type RobotClient,
   VisionClient,
-} from '@viamrobotics/sdk';
+} from "@viamrobotics/sdk";
 
 export interface RobotCredentials {
   hostname: string;
@@ -21,17 +21,16 @@ export interface RobotCredentials {
 export const getRobotClient = async (
   credentials: RobotCredentials
 ): Promise<RobotClient> => {
-
   const { hostname, key_id, key_value } = credentials;
 
   return createRobotClient({
-    host:hostname,
-    credential: {
-      type: 'api-key' ,
+    host: hostname,
+    credentials: {
+      type: "api-key",
       payload: key_value,
-    } ,
-    authEntity: key_id,
-    signalingAddress: 'https://app.viam.com:443',
+      authEntity: key_id,
+    },
+    signalingAddress: "https://app.viam.com:443",
   });
 };
 
@@ -52,7 +51,7 @@ export const getStreamClient = (client: RobotClient): StreamClient => {
  * @returns A connected camera client
  */
 export const getCameraClient = (client: RobotClient): CameraClient => {
-  return new CameraClient(client, 'face-camera');
+  return new CameraClient(client, "face-camera");
 };
 
 /**
@@ -62,5 +61,5 @@ export const getCameraClient = (client: RobotClient): CameraClient => {
  * @returns A connected vision client
  */
 export const getIdentificationClient = (client: RobotClient): VisionClient => {
-  return new VisionClient(client, 'vis-identification');
+  return new VisionClient(client, "vis-identification");
 };
