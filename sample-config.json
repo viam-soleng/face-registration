@@ -56,7 +56,7 @@
           "face"
         ],
         "padding": 30,
-        "path": "/Users/felixreichenbach/Downloads/faces",
+        "path": "/Users/username/Downloads/faces",
         "camera": "camera",
         "confidence": 0.5,
         "detector": "vis-face-detect"
@@ -104,7 +104,7 @@
       "type": "vision",
       "model": "viam:vision:face-identification",
       "attributes": {
-        "picture_directory": "/Users/felixreichenbach/Downloads/faces",
+        "picture_directory": "/Users/username/Downloads/faces",
         "camera_name": "camera"
       },
       "depends_on": [
@@ -135,7 +135,7 @@
     {
       "type": "local",
       "name": "local-module",
-      "executable_path": "/Users/felixreichenbach/Documents/GitHub/selfie-camera/module.tar.gz"
+      "executable_path": "/Users/username/Documents/GitHub/selfie-camera/module.tar.gz"
     }
   ],
   "packages": [
