@@ -21,7 +21,6 @@ import (
 	"go.viam.com/rdk/services/vision"
 	"go.viam.com/rdk/vision/objectdetection"
 
-	"go.viam.com/rdk/gostream"
 	"go.viam.com/utils"
 )
 
@@ -162,14 +161,6 @@ func (sc *faceCamera) Images(ctx context.Context) ([]camera.NamedImage, resource
 		return images, meta, err
 	}
 	return images, meta, nil
-}
-
-func (sc *faceCamera) Stream(ctx context.Context, errHandlers ...gostream.ErrorHandler) (gostream.VideoStream, error) {
-	camStream, err := sc.camera.Stream(ctx, errHandlers...)
-	if err != nil {
-		return nil, err
-	}
-	return camStream, nil
 }
 
 func (sc *faceCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
