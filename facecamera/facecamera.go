@@ -19,36 +19,36 @@ import (
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/services/vision"
+	"go.viam.com/rdk/spatialmath"
 	"go.viam.com/rdk/vision/objectdetection"
-
 	"go.viam.com/utils"
 )
 
-var Model = resource.ModelNamespace("viam-soleng").WithFamily("camera").WithModel("face-camera")
+var Model = resource.NewModel("viam-soleng", "camera", "face-camera")
 
 type Config struct {
-	Camera     string
-	Detector   string
-	Confidence float64
-	Path       string
-	Labels     []string
-	Padding    int
+	Camera     string   `json:"camera"`
+	Detector   string   `json:"detector"`
+	Confidence float64  `json:"confidence,omitempty"`
+	Labels     []string `json:"labels,omitempty"`
+	Padding    int      `json:"padding,omitempty"`
+	Path       string   `json:"path,omitempty"`
 }
 
-func (cfg *Config) Validate(path string) ([]string, error) {
+func (cfg *Config) Validate(path string) ([]string, []string, error) {
 	if cfg.Camera == "" {
-		return nil, utils.NewConfigValidationFieldRequiredError(path, "camera")
+		return nil, nil, utils.NewConfigValidationFieldRequiredError(path, "camera")
 	}
 
 	if cfg.Detector == "" {
-		return nil, utils.NewConfigValidationFieldRequiredError(path, "detector")
+		return nil, nil, utils.NewConfigValidationFieldRequiredError(path, "detector")
 	}
 
 	if cfg.Path == "" {
-		return nil, utils.NewConfigValidationFieldRequiredError(path, "path")
+		return nil, nil, utils.NewConfigValidationFieldRequiredError(path, "path")
 	}
 
-	return []string{cfg.Camera, cfg.Detector}, nil
+	return []string{cfg.Camera, cfg.Detector}, nil, nil
 }
 
 func init() {
@@ -155,8 +155,8 @@ func (sc *faceCamera) removeFace(name string) error {
 	return nil
 }
 
-func (sc *faceCamera) Images(ctx context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
-	images, meta, err := sc.camera.Images(ctx)
+func (sc *faceCamera) Images(ctx context.Context, filterSourceNames []string, extra map[string]interface{}) ([]camera.NamedImage, resource.ResponseMetadata, error) {
+	images, meta, err := sc.camera.Images(ctx, filterSourceNames, extra)
 	if err != nil {
 		return images, meta, err
 	}
@@ -165,6 +165,11 @@ func (sc *faceCamera) Images(ctx context.Context) ([]camera.NamedImage, resource
 
 func (sc *faceCamera) NextPointCloud(ctx context.Context) (pointcloud.PointCloud, error) {
 	return nil, fmt.Errorf("the face-registration module doesn't support pointclouds")
+}
+
+// Geometries is unimplemented
+func (fc *faceCamera) Geometries(ctx context.Context, extra map[string]interface{}) ([]spatialmath.Geometry, error) {
+	return fc.camera.Geometries(ctx, extra)
 }
 
 func (sc *faceCamera) Properties(ctx context.Context) (camera.Properties, error) {
