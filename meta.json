@@ -6,7 +6,9 @@
   "models": [
     {
       "api": "rdk:component:camera",
-      "model": "viam-soleng:camera:face-camera"
+      "model": "viam-soleng:camera:face-camera",
+      "short_description": "Face registration camera with configurable storage and face detection",
+      "markdown_link": "README.md#component-configuration"
     }
   ],
   "build": {
