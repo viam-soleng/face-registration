@@ -1,17 +1,27 @@
 on:
   push:
-    tags:
-      - "[0-9]+.[0-9]+.[0-9]+*"
+  release:
+    types: [published]
+
+env:
+  VERSION: ${{ github.event_name == 'release' && github.ref_name || format('0.0.0-{0}.{1}', github.ref_name, github.run_number) }}
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        platform: [arm64, amd64]
     steps:
       - uses: actions/checkout@v3
-      - uses: viamrobotics/build-action@v1
+      - name: build
+        run: make module
+      - name: upload
+        if: ${{ github.event_name == 'release' }}
+        uses: viamrobotics/upload-module@main
         with:
-          # note: you can replace this line with 'version: ""' if you want to test the build process without deploying
-          version: ${{ github.ref_name }}
-          ref: ${{ github.sha }}
+          module-path: module.tar.gz
+          platform: linux/${{ matrix.platform }}
+          version: ${{ env.VERSION }}
           key-id: ${{ secrets.viam_key_id }}
           key-value: ${{ secrets.viam_key_value }}
